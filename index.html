@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmos BLE App</title>
+  <style>
+    body{font-family:sans-serif; text-align:center; padding:15px; background:#0b0e14; color:#eee;}
+    .card{background:#1c1f26; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #333;}
+    .btn{display:inline-block; padding:12px; margin:4px; color:white; text-decoration:none; border-radius:8px; border:none; cursor:pointer; font-weight:bold; min-width:80px; font-size:12px;}
+    .btn-earth{background:#2e7d32;} .btn-theia{background:#e65100;} .btn-moon{background:#9e9e9e; color:black;}
+    .btn-blue{background:#007bff;} .btn-red{background:#dc3545;} .btn-gray{background:#444;} .btn-green{background:#28a745; width:90%; font-size:16px;}
+    input[type='text'], input[type='range']{width:90%; margin:10px 0; padding:10px; border-radius:5px;}
+    label{font-size:0.8em; color:#888; display:block; margin-top:10px;}
+    h3{margin:5px; color:#007bff;}
+  </style>
+</head>
+<body>
+
+  <h2>Cosmos BLE Dashboard</h2>
+  
+  <div class="card">
+    <button id="connectBtn" class="btn btn-green" onclick="connectBLE()">CONNECT TO BLUETOOTH</button>
+    <p id="status" style="color:red; font-size:0.8em;">Status: Disconnected</p>
+  </div>
+
+  <div class="card"><h3>Presets</h3>
+    <button class="btn btn-earth" onclick="sendCmd('MODE:earth1')">EARTH-1</button>
+    <button class="btn btn-theia" onclick="sendCmd('MODE:theia')">THEIA</button>
+    <button class="btn btn-earth" onclick="sendCmd('MODE:earth2')">EARTH-2</button>
+    <button class="btn btn-moon" onclick="sendCmd('MODE:moon')">MOON</button>
+  </div>
+
+  <div class="card"><h3>Matrix Control</h3>
+    <input type="text" id="customMsg" placeholder="Custom text...">
+    <br><button class="btn btn-blue" onclick="sendText()">WRITE TEXT</button><br>
+    
+    <label>Alignment:</label> 
+    <button class="btn btn-gray" onclick="sendCmd('ALIGN:L')">LEFT</button>
+    <button class="btn btn-gray" onclick="sendCmd('ALIGN:C')">CENTER</button>
+    <button class="btn btn-gray" onclick="sendCmd('ALIGN:R')">RIGHT</button>
+    
+    <label>Movement:</label> 
+    <button class="btn btn-gray" onclick="sendCmd('EFFECT:scroll')">SCROLL</button>
+    <button class="btn btn-gray" onclick="sendCmd('EFFECT:static')">STATIC</button>
+
+    <label>Scroll Speed (Lower = Faster)</label>
+    <input type="range" min="10" max="150" value="70" onchange="sendCmd('MSPEED:' + this.value)">
+    
+    <label>Matrix Brightness</label>
+    <input type="range" min="0" max="15" value="2" onchange="sendCmd('MBRIGHT:' + this.value)">
+    <br><button class="btn btn-red" style="margin-top:15px;" onclick="sendCmd('MOFF')">TURN OFF MATRIX</button>
+  </div>
+
+  <div class="card"><h3>LED Control</h3>
+    <button class="btn btn-blue" onclick="sendCmd('MODE:rainbow')">RAINBOW MODE</button>
+    
+    <label>Effect Speed</label>
+    <input type="range" min="1" max="100" value="30" onchange="sendCmd('LSPEED:' + this.value)">
+    
+    <label>LED Brightness</label>
+    <input type="range" min="0" max="255" value="80" onchange="sendCmd('LBRIGHT:' + this.value)">
+    <br><button class="btn btn-red" style="margin-top:15px;" onclick="sendCmd('LOFF')">TURN OFF LEDS</button>
+  </div>
+
+  <script>
+    var bleDevice, bleServer, bleService, rxCharacteristic;
+    const serviceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const rxUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+    async function connectBLE() {
+      try {
+        document.getElementById('status').innerText = "Status: Requesting Device...";
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'Cosmos Matrix' }],
+          optionalServices: [serviceUUID]
+        });
+        
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+        
+        document.getElementById('status').innerText = "Status: Connecting to GATT Server...";
+        bleServer = await bleDevice.gatt.connect();
+        
+        document.getElementById('status').innerText = "Status: Getting Service...";
+        bleService = await bleServer.getPrimaryService(serviceUUID);
+        
+        document.getElementById('status').innerText = "Status: Getting Characteristic...";
+        rxCharacteristic = await bleService.getCharacteristic(rxUUID);
+        
+        document.getElementById('status').innerText = "Status: Connected!";
+        document.getElementById('status').style.color = "lime";
+        document.getElementById('connectBtn').innerText = "CONNECTED";
+      } catch (error) {
+        document.getElementById('status').innerText = "Error: " + error;
+      }
+    }
+
+    function onDisconnected() {
+      document.getElementById('status').innerText = "Status: Disconnected";
+      document.getElementById('status').style.color = "red";
+      document.getElementById('connectBtn').innerText = "CONNECT TO BLUETOOTH";
+    }
+
+    async function sendCmd(cmd) {
+      if (!rxCharacteristic) return alert("Connect to Bluetooth first!");
+      let encoder = new TextEncoder();
+      await rxCharacteristic.writeValue(encoder.encode(cmd));
+    }
+
+    function sendText() {
+      let text = document.getElementById("customMsg").value;
+      if(text) sendCmd("MSG:" + text);
+    }
+  </script>
+</body>
+</html>
