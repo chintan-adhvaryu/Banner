@@ -40,8 +40,7 @@
     </div>
     
     <div id="cloudSettings" style="display:none; margin-top:10px;">
-      <input type="text" id="blynkToken" placeholder="Paste Blynk Auth Token Here..." onchange="saveToken()">
-      <p style="color:#00ff00; font-size:0.8em;">Cloud Mode Active! You are now controlling it over the internet.</p>
+      <p style="color:#00ff00; font-size:0.85em; font-weight:bold;">Cloud Mode Active! You are now controlling it over the internet.</p>
     </div>
   </div>
 
@@ -99,23 +98,15 @@
     const serviceUUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
     const rxUUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
     const txUUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-
-    // Load saved token on startup
-    window.onload = function() {
-      if(localStorage.getItem("blynkToken")) {
-        document.getElementById("blynkToken").value = localStorage.getItem("blynkToken");
-      }
-    };
-
-    function saveToken() {
-      localStorage.setItem("blynkToken", document.getElementById("blynkToken").value);
-    }
+    
+    // Hardcoded Blynk Token
+    const blynkToken = "NvppwfZxvlO_oqnhEJ1RpzS09707n6XB";
 
     function toggleCloudMode() {
       let isCloud = document.getElementById("cloudToggle").checked;
       if (isCloud) {
         document.getElementById("cloudSettings").style.display = "block";
-        document.getElementById("wifiCard").style.opacity = "0.3"; // Dim WiFi config when remote
+        document.getElementById("wifiCard").style.opacity = "0.3"; 
       } else {
         document.getElementById("cloudSettings").style.display = "none";
         document.getElementById("wifiCard").style.opacity = "1.0";
@@ -123,10 +114,7 @@
     }
 
     async function sendToBlynkCloud(pin, value) {
-      let token = document.getElementById("blynkToken").value;
-      if (!token) { alert("Please enter your Blynk Auth Token first."); return; }
-      
-      let url = `https://blynk.cloud/external/api/update?token=${token}&${pin}=${value}`;
+      let url = `https://blynk.cloud/external/api/update?token=${blynkToken}&${pin}=${value}`;
       try {
         await fetch(url);
         console.log("Sent to Cloud: " + url);
@@ -153,7 +141,7 @@
         else if (cmd === "MODE:moon") sendToBlynkCloud("V5", 5);
         else if (cmd.startsWith("LSPEED:")) sendToBlynkCloud("V6", cmd.substring(7));
         else if (cmd.startsWith("LBRIGHT:")) sendToBlynkCloud("V7", cmd.substring(8));
-        // Note: MOFF/LOFF handled natively via matrixOn variables in firmware, not mapped to a pin here for simplicity, but you can set Brightness to 0 to turn them off via cloud.
+        
         if (cmd === "MOFF") sendToBlynkCloud("V4", 0); 
         if (cmd === "LOFF") sendToBlynkCloud("V7", 0);
         return;
