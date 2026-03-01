@@ -3,6 +3,9 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cosmos Universal Remote</title>
+  
+  <link rel="manifest" href="manifest.json">
+
   <style>
     body{font-family:sans-serif; text-align:center; padding:15px; background:#0b0e14; color:#eee;}
     .card{background:#1c1f26; padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid #333; box-shadow: 0 4px 8px rgba(0,0,0,0.3);}
@@ -195,6 +198,16 @@
       let ssid = document.getElementById("wifiSelect").value;
       let pass = document.getElementById("wifiPass").value;
       if (ssid) { document.getElementById("wifiStatus").innerText = "Connecting..."; sendCmd("WIFI:" + ssid + ":" + pass); }
+    }
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
     }
   </script>
 </body>
